@@ -42,11 +42,13 @@ Authoritative spec: `../SLACK-GAME-PROTOCOL.md` (in the repo root). Minimal cont
 | `slack:error` | `{ message }` | optional debug error |
 | `slack:key` | `{ key: 'alt-m' }` | forward Alt+M to the panel |
 
-**Sandbox hard rules** (violations are the #1 failure source):
+**Sandbox defaults** (violations are the #1 failure source). The default sandbox is `allow-scripts` only — unless the manifest declares a wider `sandbox` array:
 
-1. **NO `localStorage`/`sessionStorage`** — accessing them in the sandbox throws `SecurityError` and can kill the game. Save progress via `slack:state.state` instead; if the game insists on storage, install an in-memory shim **before** the game's scripts run (see the wrapper template).
-2. **NO `window.top` / `window.opener` / popups / form submits / top navigation**.
+1. **NO `localStorage`/`sessionStorage`** — accessing them in the default sandbox throws `SecurityError` and can kill the game (also: reading `document.cookie` throws — the chess adaptation hit this). Save progress via `slack:state.state` instead; if the game insists on storage, install an in-memory shim **before** the game's scripts run (see the wrapper template).
+2. **NO `window.top` / `window.opener` / popups / form submits / top navigation**; `alert()`/`prompt()`/`confirm()` are no-ops (replace with in-page UI).
 3. Focus lives inside the iframe: the game's `window` receives keydown when the user clicks it — use that for input; forward Alt+M yourself.
+4. **Network IS allowed** (fetch/XHR work subject to CORS). Cross-origin reads need the target's `Access-Control-Allow-Origin`; the plugin's `/slack-games` static route sends `*`.
+5. **Wider sandbox via manifest**: games that embed third-party pages (e.g. a Bilibili player) can declare `"sandbox": ["allow-scripts","allow-same-origin","allow-forms","allow-popups"]` in the manifest — this restores cookie/localStorage/popups for that game only. ⚠️ Use only for trusted games; default stays strict.
 
 ## 2. Build a game from scratch
 

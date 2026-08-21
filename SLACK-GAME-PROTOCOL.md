@@ -48,6 +48,7 @@
 | `author` | ❌ | 作者名 |
 | `description` | ❌ | 简介 |
 | `icon` | ❌ | 图标（相对路径），暂未使用 |
+| `sandbox` | ❌ | iframe 沙箱权限（字符串数组或空格分隔的字符串）。**缺省 = `["allow-scripts"]`（最严）**。需要嵌入第三方页面（如 B 站播放器）的游戏可声明放宽，例如 `["allow-scripts","allow-same-origin","allow-forms","allow-popups"]`。⚠️ 放宽权限会降低隔离性，只对你信任的游戏使用 |
 
 ## 3. 消息协议
 
