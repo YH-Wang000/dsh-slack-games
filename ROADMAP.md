@@ -15,7 +15,8 @@
 - [x] 底座稳定壳化：伺服内容仓 + 预注册 + localStorage 持久化 + 移除记忆
 - [x] 游戏开发/适配 Skill（`skills/slack-game-development`）+ wrapper 模板 + 适配清单
 - [x] 适配样板：moyu 2048（走完整套 skill 流程）
-- [ ] 内容仓推送到 GitHub（需要用户凭据）
+- [x] 实时制适配样板：moyu 盖塔楼（three.js + GSAP，冻结 rAF + `TweenMax.pauseAll()` 暂停策略，构建脚本 `tools/build-tower.mjs`）
+- [x] 内容仓推送到 GitHub（需要用户凭据）
 
 ## 后期（按用户定义：大规模游戏适配）
 
@@ -25,8 +26,9 @@
 ### 规划
 1. **适配流水线**（半自动）：
    - `tools/` 脚本：`fetch-game`（拉源游戏目录）→ `wrap`（套模板生成 wrapper + manifest）→ `validate`（沙箱/协议静态校验）；
-   - 优先回合制（低成本），实时制按需；
+   - 优先回合制（低成本），实时制按需（样板：盖塔楼）；
    - 每款游戏过 `adapt-checklist`（A 源评估 / B 包装 / C 沙箱验证 / D 发布）。
+   - ⚠️ 源完整性核查：部分 moyu 游戏仓库缺资源（如 `游戏-6.打地鼠` 的 CSS 引用 `img/` 图但目录无图，直接不可玩）→ 抓取后先核对资源再进入适配。
 2. **游戏源管理**：以 `registry.json` 为索引，支持按"来源/分类/质量"标记。
 3. **托管**：GitHub Pages 托管内容仓 → 所有游戏可通过 URL 安装；也可选装进本地 `~/.dsh/slack-games`。
 

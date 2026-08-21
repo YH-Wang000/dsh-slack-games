@@ -1,0 +1,77 @@
+
+<!DOCTYPE html>
+<html>
+	<head>
+		<meta charset="utf-8">
+		<title>海拥 | 盖塔楼</title>
+		<meta name="viewport" content="width=device-width,user-scalable=no">
+		<meta name="keywords" content="盖塔楼" />
+		<meta name="description" content="盖塔楼" /> 
+		<link rel="stylesheet" href="css/style.css">
+			
+	</head>
+	<body>		
+		
+		
+		<div id="container">
+			<div id="game"></div>
+			<div id="score">0</div>
+			<div id="instructions">单击(或按空格)放置砖块</div>
+			<div class="game-over">
+				<h2>Game Over</h2>
+				<p>你做的很好啦,你是最棒的</p>
+				<p>单击或按空格重新开始</p>
+			</div>
+			<div class="game-ready">
+				<div id="start-button">开始</div>
+				<div></div>
+			</div>
+		</div>
+
+		<script src="js/three.min.js"></script>
+	<script src="js/tweenmax.min.js"></script>
+	<script src="js/script.js"></script>
+	<script>
+// ---- 摸鱼协议接线（实时 3D 叠塔：冻结 rAF + TweenMax.pauseAll）----
+var protocolPaused = false
+function post(msg) { if (window.parent) { try { window.parent.postMessage(msg, '*') } catch (e) {} } }
+function postReady() { post({ type: 'slack:ready', payload: { title: '盖塔楼', version: 1 } }) }
+function serializeState() {
+  return { score: game.blocks.length - 1, ended: game.state === 'ended', state: game.state }
+}
+function postState() {
+  var state = null
+  try { state = serializeState() } catch (e) {}
+  post({ type: 'slack:state', payload: { status: protocolPaused ? 'paused' : 'playing', state: state } })
+}
+function onInit(restore) {
+  // 塔楼无法还原中间状态：有进度时直接重新开局
+  if (restore && restore.score > 0 && game.state !== 'ended') game.restartGame()
+  protocolPaused = false
+  game.paused = false
+  if (window.TweenMax) TweenMax.resumeAll()
+  postReady()
+  postState()
+}
+function onPause() { protocolPaused = true; game.paused = true; if (window.TweenMax) TweenMax.pauseAll(); postState() }
+function onResume() { protocolPaused = false; game.paused = false; if (window.TweenMax) TweenMax.resumeAll(); postState() }
+function onDestroy() { game.paused = true; if (window.TweenMax) TweenMax.pauseAll() }
+window.addEventListener('message', function (e) {
+  var d = e.data
+  if (!d || typeof d !== 'object') return
+  if (d.type === 'slack:init') onInit(d.payload && d.payload.restore)
+  else if (d.type === 'slack:pause') onPause()
+  else if (d.type === 'slack:resume') onResume()
+  else if (d.type === 'slack:destroy') onDestroy()
+})
+// Alt+M 转发：父面板快捷键在 iframe 获得焦点时收不到，需游戏转发
+window.addEventListener('keydown', function (e) {
+  if ((e.altKey || e.metaKey) && (e.key === 'm' || e.key === 'M')) {
+    e.preventDefault()
+    post({ type: 'slack:key', payload: { key: 'alt-m' } })
+  }
+})
+</script>
+</body>
+
+</html>

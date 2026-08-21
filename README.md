@@ -7,7 +7,7 @@ DSH 摸鱼插件的**游戏内容仓库**：这里开发、维护所有协议化
 ```
 games/<game-id>/          每款游戏一个目录
 ├── manifest.json         游戏清单（协议版本 1）
-└── index.html            自包含游戏页（内联 CSS/JS，无外部依赖）
+└── index.html            自包含游戏页（无外部网络依赖，可为多文件）
 skills/slack-game-development/   游戏开发/适配 Skill（SKILL.md + template/）
 template/                 适配器模板（在 skill 目录内）
 registry.json             游戏索引
@@ -23,6 +23,7 @@ SLACK-GAME-PROTOCOL.md    协议规范（权威副本）
 | memory | 纸牌记忆 | 翻牌配对，步数/星级/计时（从 wanghao221/moyu 适配）| ✅ |
 | dice | 骰子对决 | 双人掷骰比大小（从 wanghao221/moyu 适配）| ✅ |
 | chess | 中国象棋 | 人机对战，AI 引擎 + 开局库，两级难度（从 wanghao221/moyu 适配）| ✅ |
+| tower | 盖塔楼 | 3D 叠塔，移动砖块上精准落子（从 wanghao221/moyu 适配，three.js 实时）| ✅ |
 | sudoku | 数独 | 唯一解生成 + 实时冲突校验 | 待开发 |
 | gomoku | 五子棋 | 人机（AI）· 双人 | 待开发 |
 | snake | 贪吃蛇 | WASD/方向键 | 待开发 |
@@ -39,7 +40,7 @@ SLACK-GAME-PROTOCOL.md    协议规范（权威副本）
 
 ## 贡献/适配
 
-1. 新游戏放到 `games/<id>/`：`manifest.json` + 自包含 `index.html`（可用 `template/` 模板加速）；
+1. 新游戏放到 `games/<id>/`：`manifest.json` + 自包含 `index.html`（无外部网络依赖，可用 `template/` 模板加速）；
 2. 在 `registry.json` 登记；
 3. 本地验证：`python -m http.server` 起静态服务，在摸鱼面板"游戏库"粘贴 manifest URL 安装测试；
 4. 推送本仓库（GitHub Pages 托管后，游戏即可通过 URL 直接安装）。

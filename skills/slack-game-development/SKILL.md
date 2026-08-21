@@ -100,6 +100,7 @@ Set `ORIGINAL_URL` in the wrapper; the wrapper iframes the original and forwards
 - **Turn-based + keyboard (2048)**: `onPause` → ignore keydown; `serializeState` → `{ grid, score }`; `onInit(restore)` → rebuild grid. ~30 minutes.
 - **Turn-based + click (象棋/纸牌)**: `onPause` → ignore clicks (a `paused` flag at the top of every handler, or `pointer-events:none` on the board); restore = board + whose turn.
 - **Real-time (打地鼠/飞行)**: locate the loop — grep for `setInterval`/`requestAnimationFrame`/`setTimeout` — replace with a guarded wrapper that checks `paused` (or clear the interval on pause and restart on resume, rebuilding elapsed state if the game depends on `Date.now()`). Verify the game does not desync after resume.
+- **Real-time + rAF 渲染循环 + GSAP 补间（盖塔楼，参考实现）**: 冻结 rAF 循环——在 `tick()` 顶部 `if (paused) { requestAnimationFrame(...); return; }`（保持循环存活但不推进）；对 GSAP 动画用 `TweenMax.pauseAll()/resumeAll()` 整体冻结/恢复（恢复时先 `resumeAll()` 再继续）。`game.paused` 标志由协议 onPause/onResume 设置。完整样例：`games/tower/js/script.js`（补丁点：构造器 `this.paused`、`tick()`、`addBlock()`/`endGame()` 里 `postState()` 钩子），构建流水线见 `tools/build-tower.mjs`（含 three.js/TweenMax 本地化、外部引用剥离、`new Function` 语法校验）。
 - **localStorage users**: in Mode A, the wrapper's shim (installed before the game's script tag) makes `localStorage.setItem/getItem` work against memory — zero game-code changes for reads/writes; only exotic usages (`localStorage` as event source) need more.
 
 ### 3.6 Vetting checklist (run before publishing)

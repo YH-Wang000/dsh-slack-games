@@ -1,0 +1,9 @@
+{
+  "id": "tower",
+  "name": "盖塔楼",
+  "version": "1.0.0",
+  "protocol": 1,
+  "entry": "index.html",
+  "author": "海拥（wanghao221/moyu，摸鱼面板适配）",
+  "description": "3D 叠塔：在来回移动的砖块上精准落子，叠得越高越好（实时，three.js）。"
+}

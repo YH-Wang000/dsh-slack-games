@@ -73,6 +73,15 @@
       "entry": "index.html",
       "path": "games/chess",
       "description": "中国象棋人机对战（从 moyu 集合适配，含 AI 引擎）"
+    },
+    {
+      "id": "tower",
+      "name": "盖塔楼",
+      "version": "1.0.0",
+      "protocol": 1,
+      "entry": "index.html",
+      "path": "games/tower",
+      "description": "3D 叠塔：移动砖块上精准落子（从 moyu 集合适配，three.js 实时）"
     }
   ]
 }
