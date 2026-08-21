@@ -64,6 +64,15 @@
       "entry": "index.html",
       "path": "games/dice",
       "description": "双人掷骰比大小（从 moyu 集合适配）"
+    },
+    {
+      "id": "chess",
+      "name": "中国象棋",
+      "version": "1.0.0",
+      "protocol": 1,
+      "entry": "index.html",
+      "path": "games/chess",
+      "description": "中国象棋人机对战（从 moyu 集合适配，含 AI 引擎）"
     }
   ]
 }

@@ -1,0 +1,9 @@
+{
+  "id": "chess",
+  "name": "中国象棋",
+  "version": "1.0.0",
+  "protocol": 1,
+  "entry": "index.html",
+  "author": "海拥（wanghao221/moyu，摸鱼面板适配）",
+  "description": "中国象棋人机对战（含 AI 引擎与开局库），新手/中级两级难度，支持悔棋与放大棋盘。"
+}
