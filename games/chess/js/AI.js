@@ -8,7 +8,7 @@ AI.historyTable	=	{};		//历史表
 //人工智能初始化
 AI.init = function(pace){
 	var bill = AI.historyBill || com.gambit; //开局库
-	if (bill.length){
+	if (bill && bill.length){
 		var len=pace.length;
 		var arr=[];
 		//先搜索棋谱
