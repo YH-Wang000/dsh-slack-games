@@ -46,6 +46,15 @@
       "entry": "index.html",
       "path": "games/rps",
       "description": "经典石头剪刀布（从 moyu 集合适配）"
+    },
+    {
+      "id": "memory",
+      "name": "纸牌记忆",
+      "version": "1.0.0",
+      "protocol": 1,
+      "entry": "index.html",
+      "path": "games/memory",
+      "description": "经典翻牌记忆（从 moyu 集合适配）"
     }
   ]
 }

@@ -1,0 +1,9 @@
+{
+  "id": "memory",
+  "name": "纸牌记忆",
+  "version": "1.0.0",
+  "protocol": 1,
+  "entry": "index.html",
+  "author": "海拥（wanghao221/moyu，摸鱼面板适配）",
+  "description": "经典翻牌记忆：翻开两张配对，8 组全部配对即胜，含步数/星级/计时。"
+}

@@ -1,0 +1,720 @@
+<!doctype html>
+<html lang="en">
+<head>
+    <meta charset="utf-8">
+    <title>纸牌记忆游戏</title>
+    <meta name="description" content="">
+    <meta name="viewport" content="width=device-width, initial-scale=1">
+	
+	<style>
+		html {
+			box-sizing: border-box;
+		}
+		
+		*,
+		*::before,
+		*::after {
+			box-sizing: inherit;
+		}
+		
+		html,
+		body {
+			width: 100%;
+			height: 100%;
+			margin: 0;
+			padding: 0;
+			font-weight:bolder;
+		}
+		
+		body {
+			background: #ffffff;
+			font-size: 16px;
+		}
+		
+		.container {
+			display: flex;
+			justify-content: center;
+			align-items: center;
+			flex-direction: column;
+		}
+		
+		h1 {
+			font-family: 'Gloria Hallelujah', cursive;
+		}
+		
+		/*纸牌的样式*/
+		.deck {
+			width: 85%;
+			background: #716F71;
+			padding: 1rem;
+			border-radius: 4px;
+			box-shadow: 8px 9px 26px 0 rgba(46, 61, 73, 0.5);
+			display: flex;
+			flex-wrap: wrap;
+			justify-content: space-around;
+			align-items: center;
+			margin: 0 0 3em;
+		}
+		
+		.deck .card {
+			height: 3.7rem;
+			width: 3.7rem;
+			margin: 0.2rem 0.2rem;
+			background: #141214;;
+			font-size: 0;
+			color: #ffffff;
+			border-radius: 5px;
+			cursor: pointer;
+			display: flex;
+			justify-content: center;
+			align-items: center;
+			box-shadow: 5px 2px 20px 0 rgba(46, 61, 73, 0.5);
+		}
+		
+		.deck .card.open {
+			transform: rotateY(0);
+			background: #02b3e4;
+			cursor: default;
+			animation-name: flipInY;
+			-webkit-backface-visibility: visible;
+			backface-visibility: visible;
+			animation-duration: .75s;
+		}
+		
+		.deck .card.show {
+			font-size: 33px;
+		}
+		
+		.deck .card.match {
+			cursor: default;
+			background: #E5F720;
+			font-size: 33px;
+			animation-name: rubberBand;
+			-webkit-backface-visibility: visible;
+			backface-visibility: visible;
+			animation-duration: .75s;
+		}
+		
+		.deck .card.unmatched {
+			animation-name: pulse;
+			-webkit-backface-visibility: visible;
+			backface-visibility: visible;
+			animation-duration: .75s;
+			background: #e2043b;
+		}
+		
+		.deck .card.disabled {
+			pointer-events: none;
+			opacity: 0.9;
+		}
+		
+		/*分数面板的样式*/
+		.score-panel {
+			text-align: left;
+			margin-bottom: 10px;
+		}
+		
+		.score-panel .stars {
+			margin: 0;
+			padding: 0;
+			display: inline-block;
+			margin: 0 5px 0 0;
+		}
+		
+		.score-panel .stars li {
+			list-style: none;
+			display: inline-block;
+		}
+		
+		.score-panel .restart {
+			float: right;
+			cursor: pointer;
+		}
+		
+		.fa-star {
+			color: #FFD700;
+		}
+		
+		.timer {
+			display: inline-block;
+			margin: 0 1rem;
+		
+		}
+		
+		/*祝贺面板的样式*/
+		.overlay {
+			position: fixed;
+			top: 0;
+			bottom: 0;
+			left: 0;
+			right: 0;
+			background: rgba(0, 0, 0, 0.7);
+			transition: opacity 500ms;
+			visibility: hidden;
+			opacity: 0;
+		}
+		
+		.overlay:target {
+			visibility: visible;
+			opacity: 1;
+		}
+		  
+		.popup {
+			margin: 70px auto;
+			padding: 20px;
+			background: #ffffff;
+			border-radius: 5px;
+			width: 85%;
+			position: relative;
+			transition: all 5s ease-in-out;
+		}
+		  
+		.popup h2 {
+			margin-top: 0;
+			color: #333;
+			font-family: Tahoma, Arial, sans-serif;
+		}
+		
+		.popup .close {
+			position: absolute;
+			top: 20px;
+			right: 30px;
+			transition: all 200ms;
+			font-size: 30px;
+			font-weight: bold;
+			text-decoration: none;
+			color: #333;
+		}
+		
+		.popup .close:hover {
+			color: #E5F720;
+		}
+		
+		.popup .content-1,
+		.content-2 {
+			max-height: 30%;
+			overflow: auto;
+			text-align: center;
+		}
+		
+		.show {
+			visibility: visible;
+			opacity: 100;
+		}
+		
+		#starRating li {
+			display: inline-block;
+		}
+		
+		#play-again {
+			background-color: #141214;
+			padding: 0.7rem 1rem;
+			font-size: 1.1rem;
+			display: block;
+			margin: 0 auto;
+			width: 50%;
+			font-family: 'Gloria Hallelujah', cursive;
+			color: #ffffff;
+			border-radius: 5px;
+		}
+		
+		/* 卡片打开时的动画 */
+		
+		@keyframes flipInY {
+			from {
+				transform: perspective(400px) rotate3d(0, 1, 0, 90deg);
+				animation-timing-function: ease-in;
+				opacity: 0;
+			}
+		
+			40% {
+				transform: perspective(400px) rotate3d(0, 1, 0, -20deg);
+				animation-timing-function: ease-in;
+			}
+		
+			60% {
+				transform: perspective(400px) rotate3d(0, 1, 0, 10deg);
+				opacity: 1;
+			}
+		
+			80% {
+				transform: perspective(400px) rotate3d(0, 1, 0, -5deg);
+			}
+		
+			to {
+				transform: perspective(400px);
+			}
+		}
+		
+		/* 卡片匹配时的动画 */
+		@keyframes rubberBand {
+			from {
+				transform: scale3d(1, 1, 1);
+			}
+		
+			30% {
+				transform: scale3d(1.25, 0.75, 1);
+			}
+		
+			40% {
+				transform: scale3d(0.75, 1.25, 1);
+			}
+		
+			50% {
+				transform: scale3d(1.15, 0.85, 1);
+			}
+		
+			65% {
+				transform: scale3d(.95, 1.05, 1);
+			}
+		
+			75% {
+				transform: scale3d(1.05, .95, 1);
+			}
+		
+			to {
+				transform: scale3d(1, 1, 1);
+			}
+		}
+		
+		/* 卡片不匹配时的动画 */
+		@keyframes pulse {
+			from {
+				transform: scale3d(1, 1, 1);
+			}
+		
+			50% {
+				transform: scale3d(1.2, 1.2, 1.2);
+			}
+		
+			to {
+				transform: scale3d(1, 1, 1);
+			}
+		}
+		
+		/******媒体查询*****/
+		/* 适用于 320px 以下的样式*/
+		@media (max-width: 320px) {
+			.deck {
+			  width: 85%;
+			}
+		  
+			.deck .card {
+			  height: 4.7rem;
+			  width: 4.7rem;
+			}
+		  }
+		  
+		  /* 适用于 768px 以上的样式*/
+		  @media (min-width: 768px) {
+			.container {
+			  font-size: 22px;
+			}
+		  
+			.deck {
+			  width: 660px;
+			  height: 680px;
+			}
+		  
+			.deck .card {
+			  height: 125px;
+			  width: 125px;
+			}
+		  
+			.popup {
+			  width: 60%;
+			}
+		  }
+		 .page-footer {
+		   position: fixed;
+		   right: 0;
+		   bottom: 20px;
+		   display: flex;
+		   align-items: center;
+		   padding: 5px;
+		   color: black;
+		   background: rgba(255, 255, 255, 0.65);
+		 }
+		 
+		 .page-footer a {
+		   display: flex;
+		   margin-left: 4px;
+		 }
+		 .touxiang{
+		 	width:24px;
+		 	height:24px;
+		 }
+	</style>
+	<!-- 导入bootstrap以及字体图标等样式 -->
+    
+</head>
+<body>
+
+    <div class="container">
+        <header>
+            <h1>纸牌记忆游戏</h1>
+        </header>
+        <section class="score-panel">
+        	<ul class="stars">
+        		<li><i class="fa-star">★</i></li>
+        		<li><i class="fa-star">★</i></li>
+        		<li><i class="fa-star">★</i></li>
+        	</ul>
+        	<span class="moves">0</span>
+            <div class="timer"></div>
+            <div class="restart" onclick="startGame()">
+        		<i class="fa-repeat">↻</i>
+        	</div>
+        </section>
+        <ul class="deck" id="card-deck">
+            <li class="card" type="diamond"><span>♦</span></li>
+            <li class="card" type="plane"><span>✈</span></li>
+            <li class="card match" type="anchor"><span>⚓</span> </li>
+            <li class="card" type="bolt" ><span>⚡</span></li>
+            <li class="card" type="cube"><span>🧊</span></li>
+            <li class="card match" type="anchor"><span>⚓</span></li>
+            <li class="card" type="leaf"><span>🍃</span></li>
+            <li class="card" type="bicycle"><span>🚲</span></li>
+            <li class="card" type="diamond"><span>♦</span></li>
+            <li class="card" type="bomb"><span>💣</span></li>
+            <li class="card" type="leaf"><span>🍃</span></li>
+            <li class="card" type="bomb"><span>💣</span></li>
+            <li class="card open show" type="bolt"><span>⚡</span></li>
+            <li class="card" type="bicycle"><span>🚲</span></li>
+            <li class="card" type="plane"><span>✈</span></li>
+            <li class="card" type="cube"><span>🧊</span></li>
+        </ul>
+        <div id="popup1" class="overlay">
+            <div class="popup">
+                <h2>恭喜 🎉</h2>
+                <a class="close" href="#">×</a>
+                <div class="content-1">
+				恭喜你获得了胜利 🎉🎉
+                </div>
+                <div class="content-2">
+				    <p>你在<span id="totalTime"> </span>内 </p>
+                    <p>移动了<span id="finalMove"> </span> 次 </p>                 
+                    <p>星级:  <span id="starRating"></span></p>
+                </div>
+                <button id="play-again"onclick="playAgain()">
+                    再玩一次 😄</a>
+                </button>
+            </div>
+        </div>
+		<footer class="page-footer"><span>纸牌记忆 · 摸鱼面板适配版</span></footer>
+    </div>
+    <script>
+		// 卡片数组包含所有卡片
+		let card = document.getElementsByClassName("card");
+		let cards = [...card];
+		
+		// 游戏中所有卡片
+		const deck = document.getElementById("card-deck");
+		
+		// 声明 moves 变量
+		let moves = 0;
+		let counter = document.querySelector(".moves");
+		
+		// 声明星形图标的变量
+		const stars = document.querySelectorAll(".fa-star");
+		
+		// 声明 matchedCard 的变量
+		let matchedCard = document.getElementsByClassName("match");
+		
+		 // 星级列表
+		 let starsList = document.querySelectorAll(".stars li");
+		
+		 // 模板中的关闭图标
+		 let closeicon = document.querySelector(".close");
+		
+		 // 声明 modal
+		 let modal = document.getElementById("popup1")
+		
+		 // 打开卡片的数组
+		var openedCards = [];
+		var paused = false;
+		
+		
+		// 洗牌功能
+		function shuffle(array) {
+		    var currentIndex = array.length, temporaryValue, randomIndex;
+		
+		    while (currentIndex !== 0) {
+		        randomIndex = Math.floor(Math.random() * currentIndex);
+		        currentIndex -= 1;
+		        temporaryValue = array[currentIndex];
+		        array[currentIndex] = array[randomIndex];
+		        array[randomIndex] = temporaryValue;
+		    }
+		
+		    return array;
+		};
+		
+		
+		// 页面刷新/加载时洗牌
+		document.body.onload = startGame();
+		
+		// 开始新游戏的功能
+		function startGame(){
+		 
+		    // 清空 openCards 数组
+		    openedCards = [];
+		
+		    // 洗牌
+		    cards = shuffle(cards);
+		    // 从每张卡片中删除所有现有的类
+		    for (var i = 0; i < cards.length; i++){
+		        deck.innerHTML = "";
+		        [].forEach.call(cards, function(item) {
+		            deck.appendChild(item);
+		        });
+		        cards[i].classList.remove("show", "open", "match", "disabled");
+		    }
+		    // 重置 moves
+		    moves = 0;
+		    counter.innerHTML = moves;
+		    // 重置 rating
+		    for (var i= 0; i < stars.length; i++){
+		        stars[i].style.color = "#FFD700";
+		        stars[i].style.visibility = "visible";
+		    }
+		    // 重置 timer
+		    second = 0;
+		    minute = 0; 
+		    hour = 0;
+		    var timer = document.querySelector(".timer");
+		    timer.innerHTML = "0 分 0 秒";
+		    clearInterval(interval);
+		}
+		
+		
+		// 显示卡片的功能
+		var displayCard = function (){
+		    if (paused) return;
+		    this.classList.toggle("open");
+		    this.classList.toggle("show");
+		    this.classList.toggle("disabled");
+		};
+		
+		
+		// 将打开的卡片添加到 OpenedCards 列表并检查卡片是否匹配
+		function cardOpen() {
+		    if (paused) return;
+		    openedCards.push(this);
+		    var len = openedCards.length;
+		    if(len === 2){
+		        moveCounter();
+		        if(openedCards[0].type === openedCards[1].type){
+		            matched();
+		        } else {
+		            unmatched();
+		        }
+		    }
+		};
+		
+		
+		// 当卡片匹配时的功能
+		function matched(){
+		    openedCards[0].classList.add("match", "disabled");
+		    openedCards[1].classList.add("match", "disabled");
+		    openedCards[0].classList.remove("show", "open", "no-event");
+		    openedCards[1].classList.remove("show", "open", "no-event");
+		    openedCards = [];
+		    postState && postState();
+		}
+		
+		
+		// 当卡片不匹配时的功能
+		function unmatched(){
+		    openedCards[0].classList.add("unmatched");
+		    openedCards[1].classList.add("unmatched");
+		    disable();
+		    setTimeout(function(){
+		        openedCards[0].classList.remove("show", "open", "no-event","unmatched");
+		        openedCards[1].classList.remove("show", "open", "no-event","unmatched");
+		        enable();
+		        openedCards = [];
+		    },1100);
+		}
+		
+		
+		// 暂时禁用卡片的功能
+		function disable(){
+		    Array.prototype.filter.call(cards, function(card){
+		        card.classList.add('disabled');
+		    });
+		}
+		
+		
+		// 启用卡片并禁用匹配的卡片的功能
+		function enable(){
+		    Array.prototype.filter.call(cards, function(card){
+		        card.classList.remove('disabled');
+		        for(var i = 0; i < matchedCard.length; i++){
+		            matchedCard[i].classList.add("disabled");
+		        }
+		    });
+		}
+		
+		
+		// 计算玩家的动作的功能
+		function moveCounter(){
+		    moves++;
+		    counter.innerHTML = moves;
+		    postState && postState();
+		    // 第一次点击时启动计时器
+		    if(moves == 1){
+		        second = 0;
+		        minute = 0; 
+		        hour = 0;
+		        startTimer();
+		    }
+		    // 根据移动次数设置星级
+		    if (moves > 8 && moves < 12){
+		        for( i= 0; i < 3; i++){
+		            if(i > 1){
+		                stars[i].style.visibility = "collapse";
+		            }
+		        }
+		    }
+		    else if (moves > 13){
+		        for( i= 0; i < 3; i++){
+		            if(i > 0){
+		                stars[i].style.visibility = "collapse";
+		            }
+		        }
+		    }
+		}
+		
+		
+		// 显示游戏的时间
+		var second = 0, minute = 0; hour = 0;
+		var timer = document.querySelector(".timer");
+		var interval;
+		function startTimer(){
+		    interval = setInterval(function(){
+		        timer.innerHTML = minute+" 分"+second+" 秒";
+		        second++;
+		        if(second == 60){
+		            minute++;
+		            second=0;
+		        }
+		        if(minute == 60){
+		            hour++;
+		            minute = 0;
+		        }
+		    },1000);
+		}
+		
+		
+		// 所有卡片匹配匹配时展示恭喜界面，显示移动次数时间和等级
+		function congratulations(){
+		    if (matchedCard.length == 16){
+		        clearInterval(interval);
+		        finalTime = timer.innerHTML;
+		
+		        // 显示祝贺模板
+		        modal.classList.add("show");
+		
+		        // 声明星级变量
+		        var starRating = document.querySelector(".stars").innerHTML;
+		
+		        // 显示移动、评级、时间
+		        document.getElementById("finalMove").innerHTML = moves;
+		        document.getElementById("starRating").innerHTML = starRating;
+		        document.getElementById("totalTime").innerHTML = finalTime;
+		
+		        //模板上的关闭图标
+		        closeModal();
+		    };
+		}
+		
+		
+		// 界面上的关闭图标
+		function closeModal(){
+		    closeicon.addEventListener("click", function(e){
+		        modal.classList.remove("show");
+		        startGame();
+		    });
+		}
+		
+		
+		// 再次游戏功能
+		function playAgain(){
+		    modal.classList.remove("show");
+		    startGame();
+		}
+		
+		
+		// 循环以将事件侦听器添加到每张卡片
+		for (var i = 0; i < cards.length; i++){
+		    card = cards[i];
+		    card.addEventListener("click", displayCard);
+		    card.addEventListener("click", cardOpen);
+		    card.addEventListener("click",congratulations);
+		};
+		
+	</script>
+
+<script>
+// ---- 摸鱼协议接线（游戏脚本已加暂停守卫与 postState 上报）----
+var protocolPaused = false
+function post(msg) { if (window.parent) { try { window.parent.postMessage(msg, '*') } catch (e) {} } }
+function postReady() { post({ type: 'slack:ready', payload: { title: '纸牌记忆', version: 1 } }) }
+function serializeState() {
+  var matchedTypes = []
+  for (var i = 0; i < matchedCard.length; i++) {
+    var t = matchedCard[i].getAttribute('type')
+    if (t && matchedTypes.indexOf(t) === -1) matchedTypes.push(t)
+  }
+  return { matched: matchedTypes, moves: moves, second: second, minute: minute, hour: hour }
+}
+function postState() {
+  var state = null
+  try { state = serializeState() } catch (e) {}
+  post({ type: 'slack:state', payload: { status: protocolPaused ? 'paused' : 'playing', state: state } })
+}
+function applyRestore(r) {
+  if (!r || !Array.isArray(r.matched) || r.matched.length === 0) return false
+  startGame()
+  for (var t = 0; t < r.matched.length; t++) {
+    var type = r.matched[t]
+    var found = 0
+    for (var i = 0; i < cards.length && found < 2; i++) {
+      if (cards[i].getAttribute('type') === type) { cards[i].classList.add('match', 'disabled'); found++ }
+    }
+  }
+  moves = typeof r.moves === 'number' ? r.moves : 0
+  counter.innerHTML = moves
+  second = typeof r.second === 'number' ? r.second : 0
+  minute = typeof r.minute === 'number' ? r.minute : 0
+  hour = typeof r.hour === 'number' ? r.hour : 0
+  timer.innerHTML = minute + ' 分' + second + ' 秒'
+  if (moves > 0) startTimer()
+  if (matchedCard.length === 16) congratulations()
+  return true
+}
+function onInit(restore) {
+  if (!applyRestore(restore)) startGame()
+  protocolPaused = false
+  paused = false
+  postReady()
+  postState()
+}
+function onPause() { protocolPaused = true; paused = true; clearInterval(interval); postState() }
+function onResume() { protocolPaused = false; paused = false; if (moves > 0) startTimer(); postState() }
+function onDestroy() { clearInterval(interval) }
+window.addEventListener('message', function (e) {
+  var d = e.data
+  if (!d || typeof d !== 'object') return
+  if (d.type === 'slack:init') onInit(d.payload && d.payload.restore)
+  else if (d.type === 'slack:pause') onPause()
+  else if (d.type === 'slack:resume') onResume()
+  else if (d.type === 'slack:destroy') onDestroy()
+})
+window.addEventListener('keydown', function (e) {
+  if ((e.altKey || e.metaKey) && (e.key === 'm' || e.key === 'M')) { e.preventDefault(); post({ type: 'slack:key', payload: { key: 'alt-m' } }) }
+})
+</script>
+</body>
+</html>

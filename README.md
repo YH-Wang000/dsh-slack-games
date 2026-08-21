@@ -20,6 +20,7 @@ SLACK-GAME-PROTOCOL.md    协议规范（权威副本）
 |---|---|---|---|
 | 2048 | 2048 | 经典合并数字（从 wanghao221/moyu 适配）| ✅ |
 | rps | 石头剪刀布 | 经典猜拳，先到 10 分获胜（从 wanghao221/moyu 适配）| ✅ |
+| memory | 纸牌记忆 | 翻牌配对，步数/星级/计时（从 wanghao221/moyu 适配）| ✅ |
 | sudoku | 数独 | 唯一解生成 + 实时冲突校验 | 待开发 |
 | gomoku | 五子棋 | 人机（AI）· 双人 | 待开发 |
 | snake | 贪吃蛇 | WASD/方向键 | 待开发 |
