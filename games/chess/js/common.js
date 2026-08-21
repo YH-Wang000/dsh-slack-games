@@ -114,6 +114,10 @@ window.onload = function(){
 		function(data){
 		com.store=data.split(" ");
 	})
+	// 自动开局（沙箱中 confirm 不可用，直接开始新手级对局）
+	play.depth = 3;
+	play.isPlay = true;
+	play.init();
 }
 
 //载入图片

@@ -219,6 +219,15 @@ play.clickPoint = function (x,y){
 	
 }
 
+//可暂停的 AI 调度
+play.scheduleAI = function (){
+	setTimeout(function(){
+		if (play.paused){ play.pendingAI = true; return }
+		play.pendingAI = false;
+		play.AIPlay();
+	}, 500)
+}
+
 //Ai自动走棋
 play.AIPlay = function (){
 	//return
