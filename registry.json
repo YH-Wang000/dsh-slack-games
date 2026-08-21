@@ -1,0 +1,33 @@
+{
+  "name": "dsh-slack-games",
+  "description": "DSH 摸鱼模式游戏内容仓",
+  "games": [
+    {
+      "id": "sudoku",
+      "name": "数独",
+      "version": "1.0.0",
+      "protocol": 1,
+      "entry": "index.html",
+      "path": "games/sudoku",
+      "description": "唯一解数独，实时冲突校验"
+    },
+    {
+      "id": "gomoku",
+      "name": "五子棋",
+      "version": "1.0.0",
+      "protocol": 1,
+      "entry": "index.html",
+      "path": "games/gomoku",
+      "description": "人机（AI）· 双人"
+    },
+    {
+      "id": "snake",
+      "name": "贪吃蛇",
+      "version": "1.0.0",
+      "protocol": 1,
+      "entry": "index.html",
+      "path": "games/snake",
+      "description": "WASD/方向键控制"
+    }
+  ]
+}

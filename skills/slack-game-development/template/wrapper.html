@@ -1,0 +1,218 @@
+<!doctype html>
+<html lang="zh">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width,initial-scale=1">
+<title>SLACK GAME WRAPPER</title>
+<!--
+  ============================================================================
+  dsh-slack-games 协议包装模板（template/wrapper.html）
+  ----------------------------------------------------------------------------
+  两种用法：
+    Mode A（推荐，内嵌游戏代码）：
+      把游戏的 <style> 合并进下方 /* ==== [A] GAME CSS ==== */ 区域；
+      把游戏的 DOM 放进 <div id="game-root"> 内；
+      把游戏的 <script> 代码贴进下方 <script> 的 // ==== [A] GAME LOGIC ==== 区域。
+      你完全控制加载顺序 → localStorage shim 和 pause 挂钩都生效。
+
+    Mode B（远程 iframe，零拷贝、能力弱）：
+      把 ORIGINAL_URL 设为原始游戏地址；wrapper 内部 iframe 原始游戏。
+      暂停 = 遮罩 + pointer-events:none（仅禁输入，内部计时器仍会跑，
+      实时制游戏会继续推进——只适合回合制、无存储、可被 iframe 的页面）。
+
+  协议钩子（在本文件底部实现）：
+    onInit(restore)   init 时构建/恢复状态，然后调用 postReady() 和 postState()
+    onPause()         冻结一切（停计时器/禁输入）
+    onResume()        恢复
+    onDestroy()       释放资源
+    serializeState()  返回最小可序列化 JSON，用于 slack:state.state / restore
+  ============================================================================
+-->
+<style>
+  /* ==========================================================================
+     [A] GAME CSS — 把游戏的全部样式贴到这里（或保留原 <link>，并把 css 文件
+     拷到本文件同目录）。
+     ========================================================================== */
+  body { margin: 0; font-family: system-ui, sans-serif; background: #10141f; color: #e7eaf2; }
+
+  /* ==========================================================================
+     [B] REMOTE IFRAME CSS — Mode B 用，无需修改。
+     ========================================================================== */
+  #remote-frame { position: fixed; inset: 0; width: 100%; height: 100%; border: 0; }
+  #pause-veil { position: fixed; inset: 0; background: rgba(8,10,18,0.55); z-index: 999; pointer-events: auto; }
+  .hidden { display: none !important; }
+</style>
+</head>
+<body>
+
+<!-- ==========================================================================
+     [A] GAME DOM — 把游戏的主体 DOM 放进 #game-root（如棋盘、按钮等）。
+     ========================================================================== -->
+<div id="game-root">
+  <!-- 例如：<div id="board"></div> -->
+</div>
+
+<!-- ==========================================================================
+     [B] REMOTE IFRAME — Mode B 用（把 ORIGINAL_URL 设为原始游戏地址）。
+     ========================================================================== -->
+<iframe id="remote-frame" class="hidden" sandbox="allow-scripts allow-same-origin allow-forms"
+        title="game" loading="eager"></iframe>
+<div id="pause-veil" class="hidden"></div>
+
+<script>
+(function () {
+  'use strict'
+
+  // ==========================================================================
+  // [B] REMOTE MODE：设成原始游戏 URL（Mode A 请保持空字符串）
+  // ==========================================================================
+  var ORIGINAL_URL = ''   // 例如 'https://game.haiyong.site/xxx'
+
+  // ==========================================================================
+  // [A] GAME LOGIC — 把游戏的 <script> 代码贴到下面这个区域（保留内部函数）。
+  //     若游戏已定义同名全局函数，请改成你的游戏名空间，避免与本包装冲突。
+  // ==========================================================================
+  // >>>>>>>>>>>>>>>>>>>>>>>>> GAME CODE BEGIN >>>>>>>>>>>>>>>>>>>>>>>>>
+  // 例如：
+  // var gameScore = 0
+  // function initBoard() { ... }
+  // function onKey(e) { ... }
+  // >>>>>>>>>>>>>>>>>>>>>>>>> GAME CODE END >>>>>>>>>>>>>>>>>>>>>>>>>
+
+  // ==========================================================================
+  // 协议状态（勿改）
+  // ==========================================================================
+  var paused = false
+  var gameRoot = document.getElementById('game-root')
+  var remoteFrame = document.getElementById('remote-frame')
+  var pauseVeil = document.getElementById('pause-veil')
+
+  // ==========================================================================
+  // 内存版 localStorage shim：沙箱 iframe 访问 localStorage 会抛 SecurityError，
+  // 此 shim 在游戏脚本之前安装（本脚本置于游戏逻辑之后亦可，因为读写在游戏
+  // 交互时发生；若游戏在启动时同步读 localStorage，请把本 shim 移到游戏逻辑之前）。
+  // ==========================================================================
+  var memStore = Object.create(null)
+  function storageShim() {
+    var api = {
+      getItem: function (k) { return Object.prototype.hasOwnProperty.call(memStore, k) ? memStore[k] : null },
+      setItem: function (k, v) { memStore[String(k)] = String(v) },
+      removeItem: function (k) { delete memStore[String(k)] },
+      clear: function () { memStore = Object.create(null) },
+      key: function (i) { return Object.keys(memStore)[i] || null },
+      get length() { return Object.keys(memStore).length }
+    }
+    try {
+      // 若沙箱未开启 allow-same-origin，window.localStorage 访问本身即抛错
+      var probe = window.localStorage
+      if (probe) return  // 可用则不用 shim
+    } catch (e) { /* fall through */ }
+    try {
+      Object.defineProperty(window, 'localStorage', { value: api, configurable: true })
+    } catch (e) { /* 忽略：环境不支持覆盖 */ }
+    try {
+      Object.defineProperty(window, 'sessionStorage', { value: api, configurable: true })
+    } catch (e) { /* 忽略 */ }
+  }
+  storageShim()
+
+  // ==========================================================================
+  // 协议发送（勿改）
+  // ==========================================================================
+  function post(msg) {
+    if (window.parent) { try { window.parent.postMessage(msg, '*') } catch (e) { /* ignore */ } }
+  }
+  function postReady() {
+    post({ type: 'slack:ready', payload: { title: document.title || '游戏', version: 1 } })
+  }
+  function postState() {
+    var state = null
+    try { state = serializeState() } catch (e) { /* 序列化失败就发 null */ }
+    post({ type: 'slack:state', payload: { status: paused ? 'paused' : 'playing', state: state } })
+  }
+
+  // ==========================================================================
+  // 协议钩子 —— 适配者实现以下 6 个函数
+  // ==========================================================================
+  // init/恢复：restore 是上次保存的 state（或 null）。
+  function onInit(restore) {
+    // 例：if (restore && restore.score !== undefined) gameScore = restore.score
+  }
+  // 暂停：停计时器、禁输入（回合制只需把输入处理函数顶部 return）。
+  function onPause() {
+    // 例：pausedFlag = true
+  }
+  // 恢复：重新启动被停掉的计时器、放开输入。
+  function onResume() {
+    // 例：pausedFlag = false
+  }
+  // 销毁：清定时器/监听器/动画帧。
+  function onDestroy() {
+    // 例：clearInterval(tickId)
+  }
+  // 序列化最小可恢复状态（必须可 JSON 序列化）。
+  function serializeState() {
+    return null
+    // 例：return { score: gameScore, board: board }
+  }
+
+  // ==========================================================================
+  // 协议监听（勿改）
+  // ==========================================================================
+  window.addEventListener('message', function (e) {
+    var d = e.data
+    if (!d || typeof d !== 'object') return
+    if (d.type === 'slack:init') {
+      paused = false
+      onInit(d.payload && d.payload.restore)
+      postReady()
+      postState()
+    } else if (d.type === 'slack:pause') {
+      paused = true
+      onPause()
+      postState()
+    } else if (d.type === 'slack:resume') {
+      paused = false
+      onResume()
+      postState()
+    } else if (d.type === 'slack:destroy') {
+      onDestroy()
+    }
+  })
+
+  // Alt+M 转发（父面板快捷键在 iframe 获得焦点时收不到，需游戏转发）
+  window.addEventListener('keydown', function (e) {
+    if ((e.altKey || e.metaKey) && (e.key === 'm' || e.key === 'M')) {
+      e.preventDefault()
+      post({ type: 'slack:key', payload: { key: 'alt-m' } })
+    }
+  })
+
+  // ==========================================================================
+  // Mode B：加载远程游戏
+  // ==========================================================================
+  if (ORIGINAL_URL !== '') {
+    gameRoot.classList.add('hidden')
+    remoteFrame.classList.remove('hidden')
+    remoteFrame.src = ORIGINAL_URL
+    var remoteLoaded = false
+    remoteFrame.addEventListener('load', function () { remoteLoaded = true })
+    var oInit = onInit, oPause = onPause, oResume = onResume, oDestroy = onDestroy
+    onInit = function (restore) { if (!remoteLoaded) return; pauseVeil.classList.add('hidden'); postReady(); postState() }
+    onPause = function () { pauseVeil.classList.remove('hidden') }
+    onResume = function () { pauseVeil.classList.add('hidden') }
+    onDestroy = function () { remoteFrame.src = 'about:blank' }
+    // 远程模式下 serializeState 无法读取内部状态 → 返回 null
+    serializeState = function () { return null }
+    // 保留原钩子引用（如需在远程模式叠加逻辑）
+    void oInit; void oPause; void oResume; void oDestroy
+  }
+
+  // ==========================================================================
+  // 启动（Mode A：游戏代码里通常已有自动初始化；如需，在这里调用）
+  // ==========================================================================
+  // initGame && initGame()
+})()
+</script>
+</body>
+</html>
