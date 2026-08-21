@@ -1,0 +1,103 @@
+<!doctype html>
+<html lang="zh">
+<head>
+<meta charset="UTF-8" />
+<meta name="viewport" content="width=device-width, initial-scale=1.0" />
+<link rel="stylesheet" href="css/style.css" />
+<link rel="stylesheet" href="css/normalize.css" />
+<title>石头剪刀布</title>
+<!--
+  从 wanghao221/moyu（游戏-26.石头剪刀布）适配，遵循 dsh-slack-games 协议。
+  游戏逻辑在 js/script.js（已加暂停守卫、postState 上报、alert 改为页面消息）；
+  本文件负责协议接线（init/pause/resume/destroy、restore、Alt+M 转发）。
+-->
+</head>
+<body>
+<div id="game-root">
+  <div id="container">
+    <h2>石头剪刀布</h2>
+    <div id="game-container">
+      <div id="points">
+        <label for="playerPoints">玩家分数：</label>
+        <span class="playerPoints"></span>
+        <label for="computerPoints">电脑分数：</label>
+        <span class="computerPoints"></span>
+      </div>
+      <div id="result" class="result"></div>
+      <div id="choice">
+        <div id="playerChoice">
+          <img src="" alt="" id="playerChoiceImg">
+          <h3 id="playerChoiceTxt"></h3>
+        </div>
+        <div id="computerChoice">
+          <img src="" alt="" id="computerChoiceImg">
+          <h3 id="computerChoiceTxt"></h3>
+        </div>
+      </div>
+      <div id="buttons">
+        <button class="btn">石头</button>
+        <button class="btn">布</button>
+        <button class="btn">剪刀</button>
+      </div>
+    </div>
+  </div>
+</div>
+
+<script src="js/script.js"></script>
+
+<script>
+// ---- 摸鱼协议接线（script.js 中已加入暂停守卫与 postState 调用）----
+var protocolPaused = false
+
+function post(msg) {
+  if (window.parent) { try { window.parent.postMessage(msg, '*') } catch (e) { /* ignore */ } }
+}
+function postReady() {
+  post({ type: 'slack:ready', payload: { title: '石头剪刀布', version: 1 } })
+}
+function serializeState() {
+  return { points: points.slice() }
+}
+function postState() {
+  var state = null
+  try { state = serializeState() } catch (e) { /* 忽略 */ }
+  post({ type: 'slack:state', payload: { status: protocolPaused ? 'paused' : 'playing', state: state } })
+}
+
+function onInit(restore) {
+  var res = document.getElementById('result')
+  if (res) res.textContent = ''
+  if (restore && Array.isArray(restore.points) && restore.points.length === 2) {
+    points = restore.points.slice()
+  } else {
+    points = [0, 0]
+  }
+  updatePoints()
+  protocolPaused = false
+  paused = false
+  postReady()
+  postState()
+}
+function onPause() { protocolPaused = true; paused = true; postState() }
+function onResume() { protocolPaused = false; paused = false; postState() }
+function onDestroy() { /* 无长驻定时器；游戏内 setTimeout 均为短效 */ }
+
+window.addEventListener('message', function (e) {
+  var d = e.data
+  if (!d || typeof d !== 'object') return
+  if (d.type === 'slack:init') onInit(d.payload && d.payload.restore)
+  else if (d.type === 'slack:pause') onPause()
+  else if (d.type === 'slack:resume') onResume()
+  else if (d.type === 'slack:destroy') onDestroy()
+})
+
+// Alt+M 转发
+window.addEventListener('keydown', function (e) {
+  if ((e.altKey || e.metaKey) && (e.key === 'm' || e.key === 'M')) {
+    e.preventDefault()
+    post({ type: 'slack:key', payload: { key: 'alt-m' } })
+  }
+})
+</script>
+</body>
+</html>

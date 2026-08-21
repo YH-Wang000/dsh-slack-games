@@ -1,0 +1,9 @@
+{
+  "id": "rps",
+  "name": "石头剪刀布",
+  "version": "1.0.0",
+  "protocol": 1,
+  "entry": "index.html",
+  "author": "海拥（wanghao221/moyu，摸鱼面板适配）",
+  "description": "经典石头剪刀布：点击出拳，先到 10 分获胜。"
+}

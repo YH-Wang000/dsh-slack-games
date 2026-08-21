@@ -37,6 +37,15 @@
       "entry": "index.html",
       "path": "games/2048",
       "description": "经典 2048（从 moyu 集合适配）"
+    },
+    {
+      "id": "rps",
+      "name": "石头剪刀布",
+      "version": "1.0.0",
+      "protocol": 1,
+      "entry": "index.html",
+      "path": "games/rps",
+      "description": "经典石头剪刀布（从 moyu 集合适配）"
     }
   ]
 }
