@@ -96,8 +96,8 @@ window.onload = function(){
 		com.show();
 		play.depth = 4;
 		play.init();
-		document.cookie="stype=" +stype;
-		clearInterval(timer);
+		try { document.cookie="stype=" +stype; } catch (e) { /* 沙箱中忽略 */ }
+		memCookie["stype"] = stype;
 		var i=0;
 		var timer = setInterval(function (){
 			com.show();
@@ -203,18 +203,21 @@ com.getDomXY = function (dom){
 	return {x:left,y:top};
 }
 
-//获得cookie
+//获得cookie（沙箱 iframe 访问 document.cookie 会抛 SecurityError，做内存回退）
+var memCookie = {};
 com.getCookie = function(name){
-	if (document.cookie.length>0){
-		start=document.cookie.indexOf(name + "=")
-		if (start!=-1){ 
-			start=start + name.length+1 
-			end=document.cookie.indexOf(";",start)
-		if (end==-1) end=document.cookie.length
-			return unescape(document.cookie.substring(start,end))
-		} 
-	}
-	return false;
+	try {
+		if (typeof document.cookie === "string" && document.cookie.length>0){
+			start=document.cookie.indexOf(name + "=")
+			if (start!=-1){ 
+				start=start + name.length+1 
+				end=document.cookie.indexOf(";",start)
+			if (end==-1) end=document.cookie.length
+				return unescape(document.cookie.substring(start,end))
+			} 
+		}
+	} catch (e) { /* 沙箱中 cookie 不可用，走内存回退 */ }
+	return memCookie[name] || false;
 }
 //二维数组克隆
 com.arr2Clone = function (arr){
