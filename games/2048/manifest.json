@@ -1,0 +1,9 @@
+{
+  "id": "2048",
+  "name": "2048",
+  "version": "1.0.0",
+  "protocol": 1,
+  "entry": "index.html",
+  "author": "海拥（wanghao221/moyu，摸鱼面板适配）",
+  "description": "经典 2048 合并数字小游戏，从 moyu 集合适配：方向键操作，暂停/恢复/进度保留。"
+}

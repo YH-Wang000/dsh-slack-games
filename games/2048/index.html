@@ -1,0 +1,142 @@
+<!doctype html>
+<html lang="zh">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width,initial-scale=1">
+<title>2048</title>
+<link rel="stylesheet" href="css/style.css">
+<!--
+  从 wanghao221/moyu（游戏-2.响应式2048小游戏）适配，遵循 dsh-slack-games
+  协议。游戏逻辑在 js/script.js（已加 paused 守卫与 postState 上报）；
+  本文件负责：localStorage shim（沙箱防护）+ 协议接线（init/pause/resume/
+  destroy、restore、Alt+M 转发）。
+-->
+</head>
+<body>
+<div id="game-root">
+  <header>
+    <div class="container">
+      <h1><span>2</span><span>0</span><span>4</span><span>8</span></h1>
+      <p class="inspired">by the 原2048的灵感</p>
+    </div>
+  </header>
+  <div class="container">
+    <div class="directions">
+      <p id="haiyong" class="haiyong"><strong>如何玩：</strong> 使用方向键移动数字方块。相邻的两个方块数字相同，它们可合并成一个！</p>
+    </div>
+    <div class="scores">
+      <div class="score-container best-score">
+        历史最高
+        <div class="score">
+          <div id="bestScore">0</div>
+        </div>
+      </div>
+      <div class="score-container">
+        分数:
+        <div class="score">
+          <div id="score">0</div>
+          <div class="add" id="add"></div>
+        </div>
+      </div>
+    </div>
+    <div class="game">
+      <div id="tile-container" class="tile-container"></div>
+      <div class="end" id="end">游戏结束<div class="monkey">🙈</div><button class="btn not-recommended__item js-restart-btn"
+           id="try-again">再试一次</button></div>
+    </div>
+    <div class="not-recommended">
+      <button class="btn not-recommended__item js-restart-btn" id="restart">重新启动游戏</button>
+      <span class="not-recommended__annotation"></span>
+    </div>
+    <footer>
+      <span class="author">Created by 海拥（摸鱼面板适配版）</span>
+      <span class="center">2048</span>
+    </footer>
+  </div>
+</div>
+
+<script>
+// 内存版 localStorage shim：沙箱 iframe（无 allow-same-origin）访问
+// localStorage 会抛 SecurityError，游戏脚本在加载时读取 bestScore，此 shim
+// 必须先于 js/script.js 执行。
+(function () {
+  var mem = Object.create(null)
+  var api = {
+    getItem: function (k) { return Object.prototype.hasOwnProperty.call(mem, k) ? mem[k] : null },
+    setItem: function (k, v) { mem[String(k)] = String(v) },
+    removeItem: function (k) { delete mem[String(k)] },
+    clear: function () { mem = Object.create(null) },
+    key: function (i) { return Object.keys(mem)[i] || null },
+    get length() { return Object.keys(mem).length }
+  }
+  try { if (window.localStorage) return } catch (e) { /* 沙箱抛错，走 shim */ }
+  try { Object.defineProperty(window, 'localStorage', { value: api, configurable: true }) } catch (e) { /* 忽略 */ }
+  try { Object.defineProperty(window, 'sessionStorage', { value: api, configurable: true }) } catch (e) { /* 忽略 */ }
+})()
+</script>
+
+<script src="js/script.js"></script>
+
+<script>
+// ---- 摸鱼协议接线（script.js 中已加入 paused 守卫与 postState 调用）----
+var protocolPaused = false
+
+function post(msg) {
+  if (window.parent) { try { window.parent.postMessage(msg, '*') } catch (e) { /* ignore */ } }
+}
+function postReady() {
+  post({ type: 'slack:ready', payload: { title: '2048', version: 1 } })
+}
+function serializeState() {
+  return { game: game, score: score, nextId: nextId }
+}
+function postState() {
+  var state = null
+  try { state = serializeState() } catch (e) { /* 忽略 */ }
+  post({ type: 'slack:state', payload: { status: protocolPaused ? 'paused' : 'playing', state: state } })
+}
+
+function onInit(restore) {
+  if (restore && Array.isArray(restore.game) && restore.game.length === size * size) {
+    // 恢复进度
+    game = restore.game
+    score = typeof restore.score === 'number' ? restore.score : 0
+    nextId = typeof restore.nextId === 'number' ? restore.nextId : 1
+    scoreDiv.innerHTML = score
+    var tc = document.getElementById('tile-container')
+    tc.innerHTML = ''
+    drawBackground()
+    drawGame(game, true)
+    if (gameOver()) endDiv.classList.add('active')
+  } else {
+    // 全新开局
+    newGameStart()
+  }
+  protocolPaused = false
+  paused = false
+  postReady()
+  postState()
+}
+function onPause() { protocolPaused = true; paused = true; postState() }
+function onResume() { protocolPaused = false; paused = false; postState() }
+function onDestroy() { /* 无长驻定时器，游戏内 setTimeout 均为短效动画 */ }
+
+window.addEventListener('message', function (e) {
+  var d = e.data
+  if (!d || typeof d !== 'object') return
+  if (d.type === 'slack:init') onInit(d.payload && d.payload.restore)
+  else if (d.type === 'slack:pause') onPause()
+  else if (d.type === 'slack:resume') onResume()
+  else if (d.type === 'slack:destroy') onDestroy()
+})
+
+// Alt+M 转发：父面板快捷键在 iframe 获得焦点时收不到，需游戏转发
+window.addEventListener('keydown', function (e) {
+  if ((e.altKey || e.metaKey) && (e.key === 'm' || e.key === 'M')) {
+    e.preventDefault()
+    post({ type: 'slack:key', payload: { key: 'alt-m' } })
+  }
+})
+</script>
+</body>
+</html>
