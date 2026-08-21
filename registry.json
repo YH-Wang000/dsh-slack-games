@@ -55,6 +55,15 @@
       "entry": "index.html",
       "path": "games/memory",
       "description": "经典翻牌记忆（从 moyu 集合适配）"
+    },
+    {
+      "id": "dice",
+      "name": "骰子对决",
+      "version": "1.0.0",
+      "protocol": 1,
+      "entry": "index.html",
+      "path": "games/dice",
+      "description": "双人掷骰比大小（从 moyu 集合适配）"
     }
   ]
 }

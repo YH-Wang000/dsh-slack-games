@@ -1,0 +1,9 @@
+{
+  "id": "dice",
+  "name": "骰子对决",
+  "version": "1.0.0",
+  "protocol": 1,
+  "entry": "index.html",
+  "author": "海拥（wanghao221/moyu，摸鱼面板适配）",
+  "description": "双人掷骰比大小，点按钮掷出点数决胜负（回合制）。"
+}
